@@ -32,6 +32,7 @@ uses
   types,
   hslib,
   sysUtils,
+  uFreeLocalizer,
   main in 'main.pas' {mainFrm},
   newuserpassDlg in 'newuserpassDlg.pas' {newuserpassFrm},
   optionsDlg in 'optionsDlg.pas' {optionsFrm},
@@ -94,6 +95,10 @@ begin
     end;
   {$IFDEF EX_DEBUG}initErrorHandler(format('HFS %s (%s)', [VERSION, VERSION_BUILD]));{$ENDIF}
   Application.Initialize();
+
+  FreeLocalizer.AutoTranslate := True;
+  FreeLocalizer.LanguageFile := 'hfs.lng';
+
   Application.CreateForm(TmainFrm, mainFrm);
   Application.CreateForm(TnewuserpassFrm, newuserpassFrm);
   Application.CreateForm(ToptionsFrm, optionsFrm);

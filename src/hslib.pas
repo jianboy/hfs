@@ -206,7 +206,9 @@ type
     constructor create(server:ThttpSrv);
     destructor Destroy; override;
     procedure disconnect();
-    procedure addHeader(s:string; overwrite:boolean=TRUE); // append an additional header line
+    procedure addHeader(s:string; overwrite:boolean=TRUE); // set an additional header line. If overwrite=false will always append.
+    function  setHeaderIfNone(s:string):boolean; // set header if not already existing
+    procedure removeHeader(name:string);
     function  getHeader(h:string):string;  // extract the value associated to the specified header field
     function  getCookie(k:string):string;
     procedure setCookie(k, v:string; pairs:array of string; extra:string='');
@@ -1518,7 +1520,8 @@ begin try srv.notify(ev, self) except end end;
 procedure ThttpConn.sendheader(h:string='');
 begin
 state:=HCS_REPLYING_HEADER;
-if reply.header = '' then reply.header:=h;
+if reply.header = '' then
+  reply.header:=h;
 includeTrailingString(reply.header, CRLF);
 reply.header:=reply.header+reply.additionalHeaders;
 includeTrailingString(reply.header, CRLF);
@@ -1555,32 +1558,59 @@ end;
 function ThttpConn.replyHeader_mode(mode:ThttpReplyMode):string;
 begin result:=replyHeader_code(HRM2CODE[mode]) end;
 
-procedure ThttpConn.addHeader(s:string; overwrite:boolean=TRUE);
-var
-    i, j, from: integer;
-    name, was: string;
+function getNameOf(s:string):string; // colon included
+begin result:=copy(s, 1, pos(':', s)) end;
+
+// return 0 if not found
+function namePos(name:string; headers:string; from:integer=1):integer;
 begin
-was:=reply.additionalHeaders; // handy shortcut
+result:=from;
+  repeat
+  result:=ipos(name, headers, result);
+  until (result<=1) // both not found and found at the start of the string
+    or (headers[result-1] = #10) // or start of the line
+end; // namePos
+
+// return true if the operation succeded
+function ThttpConn.setHeaderIfNone(s:string):boolean;
+var
+  name: string;
+begin
+name:=getNameOf(s);
+if name = '' then
+  raise Exception.Create('Missing colon');
+result:=namePos(name, reply.additionalHeaders) = 0; // empty text will also be considered as existing
+if result then
+  addHeader(s, FALSE); // with FALSE it's faster
+end; // setHeaderIfNone
+
+procedure ThttpConn.removeHeader(name:string);
+var
+    i, eol: integer;
+    s: string;
+begin
+s:=reply.additionalHeaders;
+includeTrailingString(name,':');
+// see if it already exists
+i:=1;
+  repeat
+  i:=namePos(name, s, i);
+  if i = 0 then break;
+  // yes it does
+  eol:=posEx(#10, s, i);
+  if eol = 0 then // this never happens, unless the string is corrupted. Just to be sounder.
+    eol:=length(s);
+  delete(s, i, eol-i+1); // remove it
+  until false;
+reply.additionalHeaders:=s;
+end; // removeHeader
+
+procedure ThttpConn.addHeader(s:string; overwrite:boolean=TRUE);
+begin
 if overwrite then
-    begin
-    // calculate the matching text
-    i:=pos(':', s);
-    if i = 0 then
-        i:=length(s);
-    name:=copy(s, 1, i);
-    // see if it already exists
-    from:=1;
-      repeat
-      i:=ipos(name, was, from);
-      if (i=0) or (i>1) and (was[i-1] <> #10) then break;
-      // yes it does
-      j:=posEx(#10, was, i)+1;
-      delete(was, i, j-i); // remove it
-      from:=i;
-      until false;
-    end;
-reply.additionalHeaders:=was+s+CRLF;
-end;
+  removeHeader(getNameOf(s));
+appendStr(reply.additionalHeaders, s+CRLF);
+end; // addHeader
 
 function ThttpConn.getDontFree():boolean;
 begin result:=lockCount > 0 end;

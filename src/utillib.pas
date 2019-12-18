@@ -941,13 +941,13 @@ fileMode:=0;
 try
   reset(f,1);
   if IOresult <> 0 then exit;
-  seek(f, from);
-  if size < 0 then
+  if (size < 0) or (size > filesize(f)-from) then
     size:=filesize(f)-from;
   setLength(result, size);
+  seek(f, from);
   blockRead(f, result[1], size);
-  closeFile(f);
 finally
+  closeFile(f);
   filemode:=bak;
   end;
 end; // loadFile

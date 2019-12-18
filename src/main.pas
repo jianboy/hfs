@@ -35,8 +35,8 @@ uses
   HSlib, traylib, monoLib, progFrmLib, classesLib;
 
 const
-  VERSION = '2.3k';
-  VERSION_BUILD = '299';
+  VERSION = '2.3m';
+  VERSION_BUILD = '300';
   VERSION_STABLE = {$IFDEF STABLE } TRUE {$ELSE} FALSE {$ENDIF};
   CURRENT_VFS_FORMAT :integer = 1;
   CRLF = #13#10;
@@ -311,7 +311,7 @@ type
     downloadingWhat: TdownloadingWhat;
     preReply: TpreReply;
     banReason: string;
-    lastBytesSent, lastBytesGot: int64; // used for print to log only the recent amount of bytes  
+    lastBytesSent, lastBytesGot: int64; // used for print to log only the recent amount of bytes
     lastActivityTime, fileXferStart: Tdatetime;
     uploadSrc, uploadDest: string;
     uploadFailed: string; // reason (empty on success)
@@ -5387,11 +5387,10 @@ var
     exit;
     end;
 
+  if notModified(conn, f) then // calling notModified before limitsExceededOnDownload makes possible for [download] to manipualate headers set here
+    exit;
   data.countAsDownload:=f.shouldCountAsDownload();
   if data.countAsDownload and limitsExceededOnDownload() then
-    exit;
-
-  if notModified(conn, f) then
     exit;
 
   setupDownloadIcon(data);
@@ -10668,6 +10667,7 @@ if (cd.workaroundForIEutf8  = toDetect) and (cd.agent > '') then
 s:=ZcompressStr2(s, zcFastest, 31,8,zsDefault);
 if (cd.workaroundForIEutf8  = yes) and (length(s) < BAD_IE_THRESHOLD) then exit;
 cd.conn.addHeader('Content-Encoding: gzip');
+cd.conn.addHeader('Content-Length: '+intToStr(length(s)));
 cd.conn.reply.body:=s;
 end; // compressReply
 

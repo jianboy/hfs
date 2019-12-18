@@ -2278,7 +2278,14 @@ try
             url:=trim(substr(p, ':'))
             end
         else
-          md.cd.conn.addHeader(p);
+          md.cd.conn.addHeader(p, isTrue(par('overwrite',true,'1')));
+        end;
+
+    if name = 'remove header' then
+      if satisfied(md.cd) then
+        begin
+        result:='';
+        md.cd.conn.removeHeader(p);
         end;
 
     if name = 'get ini' then

@@ -171,6 +171,11 @@
 			<VersionInfoKeys Name="ProductVersion">2.3</VersionInfoKeys>
 			<VersionInfoKeys Name="Comments"></VersionInfoKeys>
 		</VersionInfoKeys>  
+    
+    
+    
+    
+    
     <Excluded_Packages>
       <Excluded_Packages Name="c:\programmi\borland\bds\4.0\Bin\dclsoap100.bpl">Borland SOAP Components</Excluded_Packages>
       <Excluded_Packages Name="c:\programmi\borland\bds\4.0\Bin\dclie100.bpl">Internet Explorer Components</Excluded_Packages>
